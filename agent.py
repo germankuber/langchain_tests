@@ -1,6 +1,3 @@
-
-from langchain.chat_models import init_chat_model
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,21 +6,16 @@ from langchain.chat_models import init_chat_model
 
 model = init_chat_model("gpt-4o-mini", model_provider="openai")
 
-from langchain_core.messages import HumanMessage
-
-from langchain_core.messages import AIMessage
-
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import START, MessagesState, StateGraph
-
-
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from typing import Sequence
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
+
 
 class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
@@ -42,6 +34,7 @@ prompt_template = ChatPromptTemplate.from_messages(
         MessagesPlaceholder(variable_name="messages"),
     ]
 )
+
 
 def call_model(state: State):
     prompt = prompt_template.invoke(state)
@@ -66,7 +59,6 @@ output = app.invoke(
 )
 output["messages"][-1].pretty_print()
 
-
 query = "What is my name?"
 
 input_messages = [HumanMessage(query)]
@@ -75,19 +67,3 @@ output = app.invoke(
     config,
 )
 output["messages"][-1].pretty_print()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -7,6 +7,7 @@ from typing import Annotated
 
 from dotenv import load_dotenv
 from IPython.display import Image, display
+from langchain.chat_models import init_chat_model
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -25,7 +26,8 @@ def build_chat_graph():
     graph_builder = StateGraph(State)
 
     # LLM node
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+
+    llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
     def chatbot(state: State):
         return {"messages": [llm.invoke(state["messages"])]}
@@ -58,11 +60,8 @@ def save_and_open_graph_png(graph, output_filename: str = "graph.png"):
         webbrowser.open(output_path.resolve().as_uri())
 
 
-if __name__ == "__main__":
-    # Build your state graph
-    graph = build_chat_graph()
+def create_diagram(graph):
 
-    # Option 1: Display inline in Jupyter
     try:
         display(Image(graph.get_graph().draw_mermaid_png()))
     except Exception:
@@ -70,3 +69,32 @@ if __name__ == "__main__":
 
     # Option 2: Save to disk and open in Preview
     save_and_open_graph_png(graph, output_filename="graph.png")
+
+
+def stream_graph_updates(user_input: str):
+    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
+        for value in event.values():
+            print("Assistant:", value["messages"][-1].content)
+
+
+def start_bot(graph):
+    while True:
+        try:
+            user_input = input("User: ")
+            if user_input.lower() in ["quit", "exit", "q"]:
+                print("Goodbye!")
+                break
+            stream_graph_updates(user_input)
+        except:
+            # fallback if input() is not available
+            user_input = "What do you know about LangGraph?"
+            print("User: " + user_input)
+            stream_graph_updates(user_input)
+            break
+
+
+if __name__ == "__main__":
+    # Build your state graph
+
+    graph = build_chat_graph()
+    start_bot(graph)
