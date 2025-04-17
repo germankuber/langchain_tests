@@ -21,7 +21,7 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-def build_chat_graph() -> StateGraph:
+def build_chat_graph():
     graph_builder = StateGraph(State)
 
     # LLM node
