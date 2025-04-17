@@ -70,6 +70,9 @@ events = graph.stream(
 for event in events:
     event["messages"][-1].pretty_print()
 
+print("***************************")
+print(graph.get_state(config))
+print("***************************")
 
 user_input = "Remember my name?"
 
@@ -81,6 +84,22 @@ events = graph.stream(
 )
 for event in events:
     event["messages"][-1].pretty_print()
+
+print("***************************")
+print(graph.get_state(config))
+print("***************************")
+
+events = graph.stream(
+    {"messages": [{"role": "user", "content": user_input}]},
+    config,
+    stream_mode="values",
+)
+for event in events:
+    event["messages"][-1].pretty_print()
+
+print("***************************")
+print(graph.get_state(config))
+print("***************************")
 
 
 # save_and_open_graph_png(graph, "graph.png")
