@@ -1,100 +1,86 @@
-import os
-import subprocess
-import sys
-import webbrowser
-from pathlib import Path
-from typing import Annotated
+from datetime import date
+from typing import Annotated, TypedDict
 
 from dotenv import load_dotenv
-from IPython.display import Image, display
-from langchain.chat_models import init_chat_model
-from langchain_anthropic import ChatAnthropic
-from langgraph.graph import END, START, StateGraph
-from langgraph.graph.message import add_messages
-from typing_extensions import TypedDict
+
+from helpers import save_and_open_graph_png
 
 load_dotenv()
 
 
+from dotenv import load_dotenv
+from IPython.display import Image, display
+from langchain.chat_models import init_chat_model
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode, tools_condition
+
+memory = MemorySaver()
+
+llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+
+
+today = date.today()
+
+
 class State(TypedDict):
-    # Messages have type “list”. The add_messages annotation
-    # tells StateGraph to append new messages rather than overwrite.
     messages: Annotated[list, add_messages]
 
 
-def build_chat_graph():
-    graph_builder = StateGraph(State)
-
-    # LLM node
-
-    llm = init_chat_model("gpt-4o-mini", model_provider="openai")
-
-    def chatbot(state: State):
-        return {"messages": [llm.invoke(state["messages"])]}
-
-    graph_builder.add_node("chatbot", chatbot)
-    graph_builder.add_edge(START, "chatbot")
-    graph_builder.add_edge("chatbot", END)
-
-    return graph_builder.compile()
+graph_builder = StateGraph(State)
 
 
-def save_and_open_graph_png(graph, output_filename: str = "graph.png"):
-    """
-    Renders the graph to a Mermaid PNG, writes it to disk,
-    and opens it using the default macOS image viewer.
-    """
-    # 1. Render PNG bytes
-    png_bytes = graph.get_graph().draw_mermaid_png()
-
-    # 2. Save to file
-    output_path = Path(output_filename)
-    output_path.write_bytes(png_bytes)
-    print(f"Graph image saved to {output_path.resolve()}")
-
-    # 3. Open with the default macOS viewer
-    if sys.platform == "darwin":
-        subprocess.run(["open", str(output_path)], check=False)
-    else:
-        # fallback: open in default browser if not on macOS
-        webbrowser.open(output_path.resolve().as_uri())
+tool = TavilySearchResults(max_results=2)
+tools = [tool]
+llm_with_tools = llm.bind_tools(tools)
 
 
-def create_diagram(graph):
-
-    try:
-        display(Image(graph.get_graph().draw_mermaid_png()))
-    except Exception:
-        pass
-
-    # Option 2: Save to disk and open in Preview
-    save_and_open_graph_png(graph, output_filename="graph.png")
+def chatbot(state: State):
+    return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 
-def stream_graph_updates(user_input: str):
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
-        for value in event.values():
-            print("Assistant:", value["messages"][-1].content)
+graph_builder.add_node("chatbot", chatbot)
+
+tool_node = ToolNode(tools=[tool])
+graph_builder.add_node("tools", tool_node)
+
+graph_builder.add_conditional_edges(
+    "chatbot",
+    tools_condition,
+)
+# Any time a tool is called, we return to the chatbot to decide the next step
+graph_builder.add_edge("tools", "chatbot")
+graph_builder.add_edge(START, "chatbot")
+# from helpers import save_and_open_graph_png
+
+graph = graph_builder.compile(checkpointer=memory)
+config = {"configurable": {"thread_id": "1"}}
 
 
-def start_bot(graph):
-    while True:
-        try:
-            user_input = input("User: ")
-            if user_input.lower() in ["quit", "exit", "q"]:
-                print("Goodbye!")
-                break
-            stream_graph_updates(user_input)
-        except:
-            # fallback if input() is not available
-            user_input = "What do you know about LangGraph?"
-            print("User: " + user_input)
-            stream_graph_updates(user_input)
-            break
+user_input = "Hi there! My name is Will."
+
+# The config is the **second positional argument** to stream() or invoke()!
+events = graph.stream(
+    {"messages": [{"role": "user", "content": user_input}]},
+    config,
+    stream_mode="values",
+)
+for event in events:
+    event["messages"][-1].pretty_print()
 
 
-if __name__ == "__main__":
-    # Build your state graph
+user_input = "Remember my name?"
 
-    graph = build_chat_graph()
-    start_bot(graph)
+# The config is the **second positional argument** to stream() or invoke()!
+events = graph.stream(
+    {"messages": [{"role": "user", "content": user_input}]},
+    config,
+    stream_mode="values",
+)
+for event in events:
+    event["messages"][-1].pretty_print()
+
+
+# save_and_open_graph_png(graph, "graph.png")

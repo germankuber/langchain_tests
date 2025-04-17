@@ -17,7 +17,8 @@ dependencies = [
     "langchain-text-splitters (>=0.3.8,<0.4.0)",
     "ipython (>=9.1.0,<10.0.0)",
     "langsmith (>=0.3.31,<0.4.0)",
-    "langchain-anthropic (>=0.3.11,<0.4.0)"
+    "langchain-anthropic (>=0.3.11,<0.4.0)",
+    "tavily-python (>=0.5.4,<0.6.0)"
 ]
 
 [tool.poetry]

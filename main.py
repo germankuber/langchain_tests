@@ -25,7 +25,6 @@ from langchain_openai import ChatOpenAI
 # print(llm.invoke("Hello, world!"))
 from langchain.chat_models import init_chat_model
 
-from langchain_core.messages import HumanMessage, SystemMessage
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
 
