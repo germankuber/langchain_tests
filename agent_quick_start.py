@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_anthropic import ChatAnthropic
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -15,6 +14,7 @@ from typing_extensions import TypedDict
 
 from helpers import save_and_open_graph_png
 
+from dotenv import load_dotenv
 load_dotenv()
 
 
