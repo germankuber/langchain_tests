@@ -1,7 +1,5 @@
-
-from langchain.chat_models import init_chat_model
-
 from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
 
 load_dotenv()
 
@@ -18,10 +16,6 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 from langchain_core.vectorstores import InMemoryVectorStore
 
 vector_store = InMemoryVectorStore(embeddings)
-
-
-
-
 
 
 import bs4
@@ -73,9 +67,8 @@ def retrieve(query: str):
     return serialized, retrieved_docs
 
 
-
-from langgraph.graph import MessagesState, StateGraph
 from langchain_core.messages import SystemMessage
+from langgraph.graph import MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 
 
@@ -152,13 +145,6 @@ graph_builder.add_edge("generate", END)
 graph = graph_builder.compile()
 
 
-
-
-
-
-
-
-
 input_message = "Hello"
 
 for step in graph.stream(
@@ -181,15 +167,3 @@ for step in graph.stream(
     stream_mode="values",
 ):
     step["messages"][-1].pretty_print()
-
-
-
-
-
-
-
-
-
-
-
-
